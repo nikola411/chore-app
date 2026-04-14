@@ -188,10 +188,17 @@ def create_app() -> Flask:
         flash(f'Generated {count} new assignment(s) for today.', 'success')
         return redirect(url_for('dashboard'))
 
+    def _send_reminders_logged():
+        try:
+            count = send_due_reminders(app)
+            print(f'[reminders] Done — sent to {count} member(s)')
+        except Exception as e:
+            print(f'[reminders] ERROR: {e}')
+
     @app.route('/admin/send-reminders', methods=['POST'])
     def admin_reminders():
-        threading.Thread(target=send_due_reminders, args=[app], daemon=True).start()
-        flash('Reminders are being sent in the background.', 'info')
+        threading.Thread(target=_send_reminders_logged, daemon=True).start()
+        flash('Reminders are being sent — check Render logs for result.', 'info')
         return redirect(url_for('dashboard'))
 
     return app
