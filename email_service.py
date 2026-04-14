@@ -5,7 +5,6 @@ from email.mime.text import MIMEText
 
 
 def _build_html(user_name: str, chores: list[dict], app_url: str) -> str:
-    """Build reminder email HTML for one or more chores."""
     chore_rows = ""
     for c in chores:
         desc = f'<p style="color:#666;margin:4px 0 0 0;font-size:14px;">{c["description"]}</p>' if c.get("description") else ""
@@ -47,11 +46,6 @@ def _build_html(user_name: str, chores: list[dict], app_url: str) -> str:
 
 
 def send_reminders(user_email: str, user_name: str, chores: list[dict], app_url: str) -> None:
-    """
-    Send a single reminder email listing all due chores for the user.
-
-    chores: list of dicts with keys 'name' and optionally 'description'
-    """
     smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.environ.get('SMTP_PORT', '587'))
     smtp_user = os.environ.get('SMTP_USER', '')
@@ -60,8 +54,6 @@ def send_reminders(user_email: str, user_name: str, chores: list[dict], app_url:
 
     if not smtp_user or not smtp_password:
         print(f"[email] SMTP not configured — skipping reminder for {user_email}")
-        for c in chores:
-            print(f"  Would remind: {c['name']}")
         return
 
     plural = "chores" if len(chores) > 1 else "chore"
@@ -71,7 +63,7 @@ def send_reminders(user_email: str, user_name: str, chores: list[dict], app_url:
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
-    msg['From'] = f'ChoreBoard <{email_from}>'
+    msg['From'] = email_from
     msg['To'] = user_email
     msg.attach(MIMEText(_build_html(user_name, chores, app_url), 'html'))
 

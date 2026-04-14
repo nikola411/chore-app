@@ -1,4 +1,5 @@
 import os
+import threading
 from datetime import date, timedelta, datetime
 
 from dotenv import load_dotenv
@@ -189,8 +190,8 @@ def create_app() -> Flask:
 
     @app.route('/admin/send-reminders', methods=['POST'])
     def admin_reminders():
-        count = send_due_reminders(app)
-        flash(f'Sent reminders to {count} member(s).', 'success')
+        threading.Thread(target=send_due_reminders, args=[app], daemon=True).start()
+        flash('Reminders are being sent in the background.', 'info')
         return redirect(url_for('dashboard'))
 
     return app
