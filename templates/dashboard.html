@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — ChoreBoard{% endblock %}
+{% block content %}
+
+{# ─── Header ──────────────────────────────────────────────────────────── #}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-0 fw-bold">Dashboard</h2>
+    <p class="text-muted mb-0">{{ today.strftime('%A, %B %-d %Y') }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="POST" action="{{ url_for('admin_generate') }}">
+      <button class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-repeat"></i> Generate Today's Assignments
+      </button>
+    </form>
+    <form method="POST" action="{{ url_for('admin_reminders') }}">
+      <button class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-envelope"></i> Send Reminders Now
+      </button>
+    </form>
+  </div>
+</div>
+
+{# ─── Stats ───────────────────────────────────────────────────────────── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="card text-center py-3">
+      <div class="fs-1 fw-bold text-warning">{{ stats.due_today }}</div>
+      <div class="text-muted small">Due today</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card text-center py-3">
+      <div class="fs-1 fw-bold text-success">{{ stats.completed_today }}</div>
+      <div class="text-muted small">Completed today</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card text-center py-3">
+      <div class="fs-1 fw-bold text-danger">{{ stats.overdue }}</div>
+      <div class="text-muted small">Overdue</div>
+    </div>
+  </div>
+</div>
+
+{# ─── Overdue ─────────────────────────────────────────────────────────── #}
+{% if overdue %}
+<div class="card mb-4">
+  <div class="card-header bg-danger text-white fw-semibold">
+    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+    Overdue ({{ overdue | length }})
+  </div>
+  <div class="card-body p-2">
+    {% for a in overdue %}
+    <div class="card assignment-card status-overdue mb-2">
+      <div class="card-body d-flex align-items-center justify-content-between py-2 px-3 flex-wrap gap-2">
+        <div>
+          <span class="fw-semibold">{{ a.chore.name }}</span>
+          <span class="badge bg-danger ms-2">{{ a.due_date.strftime('%-d %b') }}</span>
+          <span class="text-muted small ms-1">
+            <i class="bi bi-person"></i> {{ a.user.name }}
+          </span>
+        </div>
+        <form method="POST" action="{{ url_for('complete_assignment', assignment_id=a.id) }}">
+          <button class="btn btn-sm btn-success">
+            <i class="bi bi-check-lg"></i> Mark done
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{# ─── Due Today ───────────────────────────────────────────────────────── #}
+<div class="card mb-4">
+  <div class="card-header card-header-brand fw-semibold">
+    <i class="bi bi-calendar-check-fill me-1"></i>
+    Today's Chores
+    {% if today_assignments %}
+    <span class="badge bg-white text-dark ms-1">{{ today_assignments | length }}</span>
+    {% endif %}
+  </div>
+  <div class="card-body p-2">
+    {% if today_assignments %}
+    {% for a in today_assignments %}
+    <div class="card assignment-card {{ 'status-done' if a.is_completed else 'status-due' }} mb-2">
+      <div class="card-body d-flex align-items-center justify-content-between py-2 px-3 flex-wrap gap-2">
+        <div>
+          {% if a.is_completed %}
+          <s class="text-muted">{{ a.chore.name }}</s>
+          <span class="badge bg-success ms-2">Done</span>
+          {% else %}
+          <span class="fw-semibold">{{ a.chore.name }}</span>
+          {% endif %}
+          {% if a.chore.description %}
+          <div class="text-muted small">{{ a.chore.description }}</div>
+          {% endif %}
+          <div class="text-muted small">
+            <i class="bi bi-person"></i> {{ a.user.name }}
+          </div>
+        </div>
+        {% if a.is_completed %}
+        <form method="POST" action="{{ url_for('uncomplete_assignment', assignment_id=a.id) }}">
+          <button class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-counterclockwise"></i> Undo
+          </button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('complete_assignment', assignment_id=a.id) }}">
+          <button class="btn btn-sm btn-success">
+            <i class="bi bi-check-lg"></i> Mark done
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-center text-muted py-4">
+      <i class="bi bi-sun fs-2 d-block mb-2"></i>
+      No chores assigned for today — enjoy your day!
+      <div class="mt-2">
+        <form method="POST" action="{{ url_for('admin_generate') }}" class="d-inline">
+          <button class="btn btn-sm btn-outline-secondary">Generate assignments</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ─── Upcoming ─────────────────────────────────────────────────────────── #}
+{% if upcoming %}
+<div class="card">
+  <div class="card-header bg-light fw-semibold text-muted">
+    <i class="bi bi-calendar3 me-1"></i> Coming Up (next 7 days)
+  </div>
+  <div class="card-body p-2">
+    {% for a in upcoming %}
+    <div class="card assignment-card status-upcoming mb-2">
+      <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
+          <span class="fw-semibold">{{ a.chore.name }}</span>
+          <span class="badge bg-primary">{{ a.due_date.strftime('%a %-d %b') }}</span>
+        </div>
+        <div class="text-muted small">
+          <i class="bi bi-person"></i> {{ a.user.name }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

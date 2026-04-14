@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: choreboard
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Single worker so APScheduler only runs once
+    startCommand: gunicorn --workers=1 --bind=0.0.0.0:$PORT app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_URL
+        # Replace with your actual Render URL once deployed
+        value: https://choreboard.onrender.com
+      # Email settings — fill in via Render dashboard
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false   # Set in Render dashboard
+      - key: SMTP_PASSWORD
+        sync: false   # App Password from Google Account
+      - key: EMAIL_FROM
+        sync: false   # e.g. noreply@yourdomain.com or same as SMTP_USER
+
+    # Optional: mount a persistent disk so SQLite survives redeploys.
+    # Without this, data is lost on every deploy — use PostgreSQL instead.
+    # disk:
+    #   name: choreboard-data
+    #   mountPath: /data
+    #   sizeGB: 1
+    # Then set: DATABASE_URL=sqlite:////data/chores.db

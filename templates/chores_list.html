@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Chores — ChoreBoard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold mb-0"><i class="bi bi-list-task me-2"></i>Chores</h2>
+  <a href="{{ url_for('chore_new') }}" class="btn btn-brand">
+    <i class="bi bi-plus-lg me-1"></i> Add Chore
+  </a>
+</div>
+
+{% set active_chores = chores | selectattr('active') | list %}
+{% set inactive_chores = chores | rejectattr('active') | list %}
+
+{% if not chores %}
+<div class="card text-center py-5">
+  <i class="bi bi-list-task fs-1 text-muted d-block mb-2"></i>
+  <p class="text-muted">No chores yet.</p>
+  <a href="{{ url_for('chore_new') }}" class="btn btn-brand d-inline-block mx-auto" style="width:fit-content">
+    Add your first chore
+  </a>
+</div>
+{% else %}
+
+<div class="card mb-4">
+  <div class="card-header card-header-brand fw-semibold">
+    Active Chores
+    <span class="badge bg-white text-dark ms-1">{{ active_chores | length }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Chore</th>
+          <th>Frequency</th>
+          <th>Assignment</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for chore in active_chores %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ chore.name }}</div>
+            {% if chore.description %}
+            <div class="text-muted small">{{ chore.description }}</div>
+            {% endif %}
+          </td>
+          <td><span class="badge bg-secondary">{{ chore.frequency_label }}</span></td>
+          <td>
+            {% if chore.assignment_type == 'round_robin' %}
+            <span class="badge bg-info text-dark">
+              <i class="bi bi-arrow-repeat"></i> Round robin
+            </span>
+            {% else %}
+            <span class="badge bg-light text-dark border">
+              <i class="bi bi-person"></i>
+              {{ chore.assigned_user.name if chore.assigned_user else '—' }}
+            </span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <a href="{{ url_for('chore_edit', chore_id=chore.id) }}"
+               class="btn btn-sm btn-outline-secondary me-1">
+              <i class="bi bi-pencil"></i> Edit
+            </a>
+            <form method="POST" action="{{ url_for('chore_delete', chore_id=chore.id) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('Deactivate «{{ chore.name }}»?')">
+              <button class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-archive"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted text-center py-4">No active chores.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if inactive_chores %}
+<div class="card">
+  <div class="card-header bg-light text-muted fw-semibold">
+    Inactive Chores
+    <span class="badge bg-secondary ms-1">{{ inactive_chores | length }}</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 text-muted">
+      <tbody>
+        {% for chore in inactive_chores %}
+        <tr>
+          <td><s>{{ chore.name }}</s></td>
+          <td>{{ chore.frequency_label }}</td>
+          <td>
+            <a href="{{ url_for('chore_edit', chore_id=chore.id) }}"
+               class="btn btn-sm btn-outline-secondary">Restore</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if chore else 'New' }} Chore — ChoreBoard{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center">
+<div class="col-lg-7">
+
+<div class="d-flex align-items-center mb-4 gap-2">
+  <a href="{{ url_for('chores_list') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h2 class="fw-bold mb-0">
+    {{ 'Edit Chore' if chore else 'New Chore' }}
+  </h2>
+</div>
+
+<div class="card">
+  <div class="card-body p-4">
+  <form method="POST">
+
+    {# Name #}
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Chore name *</label>
+      <input type="text" name="name" class="form-control"
+             value="{{ chore.name if chore else '' }}" required autofocus>
+    </div>
+
+    {# Description #}
+    <div class="mb-4">
+      <label class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
+      <textarea name="description" class="form-control" rows="2">{{ chore.description if chore and chore.description else '' }}</textarea>
+    </div>
+
+    <hr>
+
+    {# Frequency #}
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Frequency *</label>
+      <div class="d-flex gap-3 flex-wrap">
+        {% set ft = chore.frequency_type if chore else 'weekly' %}
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="frequency_type"
+                 id="ft_daily" value="daily" {{ 'checked' if ft == 'daily' }}
+                 onchange="showFreqPanel(this.value)">
+          <label class="form-check-label" for="ft_daily">Daily</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="frequency_type"
+                 id="ft_weekly" value="weekly" {{ 'checked' if ft == 'weekly' }}
+                 onchange="showFreqPanel(this.value)">
+          <label class="form-check-label" for="ft_weekly">Weekly</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="frequency_type"
+                 id="ft_custom" value="custom" {{ 'checked' if ft == 'custom' }}
+                 onchange="showFreqPanel(this.value)">
+          <label class="form-check-label" for="ft_custom">Custom interval</label>
+        </div>
+      </div>
+    </div>
+
+    {# Weekly days panel #}
+    {% set selected_days = chore.frequency_value.split(',') if chore and chore.frequency_value and chore.frequency_type == 'weekly' else [] %}
+    <div id="panel_weekly" class="mb-3 ms-2 p-3 bg-light rounded">
+      <label class="form-label fw-semibold mb-2">Which days?</label>
+      <div class="d-flex flex-wrap gap-2">
+        {% for idx, day in [('0','Mon'),('1','Tue'),('2','Wed'),('3','Thu'),('4','Fri'),('5','Sat'),('6','Sun')] %}
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="checkbox" name="weekdays"
+                 id="day_{{ idx }}" value="{{ idx }}"
+                 {{ 'checked' if idx in selected_days }}>
+          <label class="form-check-label" for="day_{{ idx }}">{{ day }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Custom interval panel #}
+    <div id="panel_custom" class="mb-3 ms-2 p-3 bg-light rounded">
+      <label class="form-label fw-semibold">Every how many days?</label>
+      <div class="input-group" style="max-width:200px">
+        <input type="number" name="custom_interval" class="form-control" min="1"
+               value="{{ chore.frequency_value if chore and chore.frequency_type == 'custom' else '7' }}">
+        <span class="input-group-text">days</span>
+      </div>
+    </div>
+
+    <hr>
+
+    {# Assignment #}
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Assignment *</label>
+      {% set at = chore.assignment_type if chore else 'round_robin' %}
+      <div class="d-flex gap-3 flex-wrap">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="assignment_type"
+                 id="at_rr" value="round_robin" {{ 'checked' if at == 'round_robin' }}
+                 onchange="showAssignPanel(this.value)">
+          <label class="form-check-label" for="at_rr">
+            <i class="bi bi-arrow-repeat"></i> Round robin
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="assignment_type"
+                 id="at_sp" value="specific" {{ 'checked' if at == 'specific' }}
+                 onchange="showAssignPanel(this.value)">
+          <label class="form-check-label" for="at_sp">
+            <i class="bi bi-person-fill"></i> Always the same person
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel_specific" class="mb-4 ms-2 p-3 bg-light rounded">
+      <label class="form-label fw-semibold">Assigned to</label>
+      <select name="assigned_user_id" class="form-select" style="max-width:280px">
+        <option value="">— select member —</option>
+        {% for user in users %}
+        <option value="{{ user.id }}"
+          {{ 'selected' if chore and chore.assigned_user_id == user.id }}>
+          {{ user.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-brand px-4">
+        <i class="bi bi-floppy-fill me-1"></i>
+        {{ 'Save changes' if chore else 'Create chore' }}
+      </button>
+      <a href="{{ url_for('chores_list') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+
+  </form>
+  </div>
+</div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ft = document.querySelector('[name=frequency_type]:checked')?.value || 'weekly';
+const at = document.querySelector('[name=assignment_type]:checked')?.value || 'round_robin';
+
+function showFreqPanel(val) {
+  document.getElementById('panel_weekly').style.display  = val === 'weekly'  ? '' : 'none';
+  document.getElementById('panel_custom').style.display  = val === 'custom'  ? '' : 'none';
+}
+function showAssignPanel(val) {
+  document.getElementById('panel_specific').style.display = val === 'specific' ? '' : 'none';
+}
+
+showFreqPanel(ft);
+showAssignPanel(at);
+</script>
+{% endblock %}
